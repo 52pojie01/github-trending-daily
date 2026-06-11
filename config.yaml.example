@@ -1,0 +1,37 @@
+# GitHub Trending Daily 配置文件
+# 复制此文件为 ~/.github-trending/config.yaml 或项目目录下 config.yaml
+
+# GitHub Trending 配置
+languages:
+  - python
+  - javascript
+  - go
+  - rust
+
+# 语言偏好 (zh 表示中文项目优先)
+spoken_language: "zh"
+
+# 每个语言最多抓取项目数
+max_repos: 10
+
+# AI 筛选配置
+# OpenAI API Key（也可通过环境变量 OPENAI_API_KEY 设置）
+openai_api_key: ""
+openai_model: "gpt-4o-mini"
+
+# AI 推荐评分阈值（1-5，低于此分数的项目不推荐）
+min_score: 3
+
+# Docker 试用配置
+# 容器存活时间（秒）
+trial_timeout: 600
+
+# 可用端口列表
+trial_ports:
+  - 8080
+  - 8000
+  - 3000
+
+# 通知配置
+# 推送目标平台（如 weixin）
+notify_target: "weixin"

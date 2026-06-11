@@ -1,0 +1,5 @@
+requests
+beautifulsoup4
+pyyaml
+jinja2
+openai
