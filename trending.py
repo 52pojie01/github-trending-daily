@@ -8,6 +8,7 @@ GitHub Trending 爬虫模块
 import re
 import logging
 from typing import List, Dict, Optional
+from urllib.parse import quote
 
 import requests
 from bs4 import BeautifulSoup
@@ -55,9 +56,9 @@ def fetch_trending(
             - forks: Fork 数
             - today_stars: 今日新增星标数
     """
-    # 构建 URL
+    # 构建 URL（language 做 URL encode 防注入）
     if language:
-        url = f"{GITHUB_TRENDING_URL}/{language}"
+        url = f"{GITHUB_TRENDING_URL}/{quote(language, safe='')}"
     else:
         url = GITHUB_TRENDING_URL
 

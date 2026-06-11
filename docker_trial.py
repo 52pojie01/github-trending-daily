@@ -103,8 +103,11 @@ def trial(project: dict[str, Any], timeout: int = 300) -> dict[str, Any] | None:
         logger.error("No URL in project data")
         return None
 
+    import re as _re
     project_name = project.get("name", "unknown").replace("/", "_")
-    container_name = f"trending-trial-{project_name}".lower().replace(" ", "-")
+    # Docker container names must match [a-zA-Z0-9][a-zA-Z0-9_.-]
+    project_name = _re.sub(r'[^a-zA-Z0-9_.-]', '', project_name)[:40]
+    container_name = f"trending-trial-{project_name}".lower()
 
     tmpdir = tempfile.mkdtemp(prefix="trending-trial-")
     repo_dir = os.path.join(tmpdir, "repo")
@@ -157,9 +160,12 @@ def trial(project: dict[str, Any], timeout: int = 300) -> dict[str, Any] | None:
                 "-w", "/app",
                 "--memory=256m", "--cpus=0.5",
                 "--cap-drop=ALL", "--security-opt=no-new-privileges",
+                "--network=none",
+                "--read-only", "--tmpfs", "/tmp:rw,noexec,nosuid,size=64m",
+                "--pids-limit=64",
                 "--label", "trending-trial=true",
                 "python:3.12-slim",
-                "bash", "-c", "pip install -r requirements.txt 2>/dev/null && (python main.py || python app.py) || sleep infinity",
+                "bash", "-c", "cp -r /app /tmp/app && cd /tmp/app && pip install -r requirements.txt 2>/dev/null && (python main.py || python app.py) || sleep infinity",
             ])
             if rc != 0:
                 logger.error("Python trial failed: %s", err)
@@ -173,9 +179,12 @@ def trial(project: dict[str, Any], timeout: int = 300) -> dict[str, Any] | None:
                 "-w", "/app",
                 "--memory=256m", "--cpus=0.5",
                 "--cap-drop=ALL", "--security-opt=no-new-privileges",
+                "--network=none",
+                "--read-only", "--tmpfs", "/tmp:rw,noexec,nosuid,size=64m",
+                "--pids-limit=64",
                 "--label", "trending-trial=true",
                 "node:20-slim",
-                "bash", "-c", "npm install 2>/dev/null && npm start || sleep infinity",
+                "bash", "-c", "cp -r /app /tmp/app && cd /tmp/app && npm install 2>/dev/null && npm start || sleep infinity",
             ])
             if rc != 0:
                 logger.error("Node trial failed: %s", err)

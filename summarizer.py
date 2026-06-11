@@ -174,11 +174,17 @@ def summarize_and_filter(
 
     for repo in repos:
         ai_info = result_map.get(repo["name"], {})
+        raw_score = ai_info.get("score", 3)
+        # 校验 score 范围 1-5
+        try:
+            score = max(1, min(5, int(raw_score)))
+        except (ValueError, TypeError):
+            score = 3
         merged = {
             **repo,
             "summary": ai_info.get("summary", repo.get("description", "")),
             "reason": ai_info.get("reason", ""),
-            "score": ai_info.get("score", 3),
+            "score": score,
         }
 
         all_merged.append(merged)
