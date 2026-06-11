@@ -49,7 +49,7 @@ def main():
         logger.info("Config loaded: languages=%s, max_repos=%d", cfg.languages, cfg.max_repos)
 
         # CLI args override config
-        limit = args.limit or cfg.max_repos
+        limit = args.limit if args.limit is not None else cfg.max_repos
         since = args.since or "daily"
         trial_timeout = args.trial_timeout or cfg.trial_timeout
         target = args.target or cfg.notify_target

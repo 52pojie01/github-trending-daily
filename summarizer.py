@@ -201,8 +201,10 @@ def summarize_and_filter(
 def summarize_without_ai(repos: List[Dict]) -> List[Dict]:
     """
     在没有 AI API Key 的情况下，基于规则进行简单评分。
-    用作降级方案。
+    用作降级方案。返回新列表，不修改输入。
     """
+    import copy
+    repos = copy.deepcopy(repos)
     for repo in repos:
         score = 3  # 基础分
 

@@ -18,8 +18,17 @@ _port_counter = 0
 
 
 def _next_port() -> int:
+    """Find an available port starting from _base_port."""
+    import socket
     global _port_counter
     with _lock:
+        for attempt in range(100):
+            port = _base_port + _port_counter + attempt
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                if s.connect_ex(('127.0.0.1', port)) != 0:
+                    _port_counter = _port_counter + attempt + 1
+                    return port
+        # fallback
         port = _base_port + _port_counter
         _port_counter += 1
         return port
@@ -139,10 +148,11 @@ def trial(project: dict[str, Any], timeout: int = 300) -> dict[str, Any] | None:
             rc, _, err = _run_cmd(["docker", "run", "-d",
                 "--name", container_name,
                 "-p", f"{host_port}:{app_port}",
-                "-v", f"{repo_dir}:/app",
+                "-v", f"{repo_dir}:/app:ro",
                 "-w", "/app",
+                "--memory=256m", "--cpus=0.5",
                 "python:3.12-slim",
-                "bash", "-c", "pip install -r requirements.txt 2>/dev/null; python main.py || python app.py || sleep infinity",
+                "bash", "-c", "pip install -r requirements.txt 2>/dev/null && (python main.py || python app.py) || sleep infinity",
             ])
             if rc != 0:
                 logger.error("Python trial failed: %s", err)
@@ -152,10 +162,11 @@ def trial(project: dict[str, Any], timeout: int = 300) -> dict[str, Any] | None:
             rc, _, err = _run_cmd(["docker", "run", "-d",
                 "--name", container_name,
                 "-p", f"{host_port}:{app_port}",
-                "-v", f"{repo_dir}:/app",
+                "-v", f"{repo_dir}:/app:ro",
                 "-w", "/app",
+                "--memory=256m", "--cpus=0.5",
                 "node:20-slim",
-                "bash", "-c", "npm install 2>/dev/null; npm start || sleep infinity",
+                "bash", "-c", "npm install 2>/dev/null && npm start || sleep infinity",
             ])
             if rc != 0:
                 logger.error("Node trial failed: %s", err)
@@ -173,17 +184,15 @@ def trial(project: dict[str, Any], timeout: int = 300) -> dict[str, Any] | None:
         _schedule_cleanup(container_name, timeout)
 
         logger.info("Trial started: %s -> %s", container_name, trial_info["url"])
-        return trial_info
 
     except Exception as e:
         logger.error("Trial setup failed for %s: %s", project.get("name"), e)
+        shutil.rmtree(tmpdir, ignore_errors=True)
         return None
-    finally:
-        # Clean up temp dir (container has its own copy or volume mount)
-        try:
-            shutil.rmtree(tmpdir, ignore_errors=True)
-        except Exception:
-            pass
+
+    # Only delete tmpdir after container is running (it uses :ro mount)
+    shutil.rmtree(tmpdir, ignore_errors=True)
+    return trial_info
 
 
 def cleanup():

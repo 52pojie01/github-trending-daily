@@ -31,11 +31,12 @@ def send(message: str, target: str = DEFAULT_TARGET, dry_run: bool = False) -> b
         return False
 
     try:
-        cmd = ["hermes", "send", "--to", target, message]
+        cmd = ["hermes", "send", "--to", target, "-"]
         logger.info("Sending message to %s (length=%d)", target, len(message))
 
         result = subprocess.run(
             cmd,
+            input=message,
             capture_output=True,
             text=True,
             timeout=60,

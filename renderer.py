@@ -8,6 +8,9 @@ from jinja2 import Environment, BaseLoader
 
 logger = logging.getLogger(__name__)
 
+# Cached Jinja2 Environment
+_jinja_env = Environment(loader=BaseLoader(), autoescape=False)
+
 # Markdown template for the daily report
 REPORT_TEMPLATE = """# 🔥 GitHub Trending 日报 - {{ date }}
 
@@ -52,8 +55,7 @@ def render(projects: list[dict[str, Any]], template: str | None = None) -> str:
         logger.warning("No projects to render, generating empty report")
         projects = []
 
-    env = Environment(loader=BaseLoader(), autoescape=False)
-    tmpl = env.from_string(template or REPORT_TEMPLATE)
+    tmpl = _jinja_env.from_string(template or REPORT_TEMPLATE)
 
     context = {
         "date": datetime.now().strftime("%Y-%m-%d"),
