@@ -1,5 +1,6 @@
 """Docker trial management for GitHub trending projects."""
 
+import atexit
 import logging
 import os
 import shutil
@@ -138,6 +139,10 @@ def trial(project: dict[str, Any], timeout: int = 300) -> dict[str, Any] | None:
                 "docker", "run", "-d",
                 "--name", container_name,
                 "-p", f"{host_port}:{app_port}",
+                "--memory=256m", "--cpus=0.5",
+                "--cap-drop=ALL", "--security-opt=no-new-privileges",
+                "--network=bridge",
+                "--label", "trending-trial=true",
                 image_name,
             ])
             if rc != 0:
@@ -151,6 +156,8 @@ def trial(project: dict[str, Any], timeout: int = 300) -> dict[str, Any] | None:
                 "-v", f"{repo_dir}:/app:ro",
                 "-w", "/app",
                 "--memory=256m", "--cpus=0.5",
+                "--cap-drop=ALL", "--security-opt=no-new-privileges",
+                "--label", "trending-trial=true",
                 "python:3.12-slim",
                 "bash", "-c", "pip install -r requirements.txt 2>/dev/null && (python main.py || python app.py) || sleep infinity",
             ])
@@ -165,6 +172,8 @@ def trial(project: dict[str, Any], timeout: int = 300) -> dict[str, Any] | None:
                 "-v", f"{repo_dir}:/app:ro",
                 "-w", "/app",
                 "--memory=256m", "--cpus=0.5",
+                "--cap-drop=ALL", "--security-opt=no-new-privileges",
+                "--label", "trending-trial=true",
                 "node:20-slim",
                 "bash", "-c", "npm install 2>/dev/null && npm start || sleep infinity",
             ])
@@ -196,7 +205,7 @@ def trial(project: dict[str, Any], timeout: int = 300) -> dict[str, Any] | None:
 
 
 def cleanup():
-    """Remove all active trial containers."""
+    """Remove all active trial containers (also registered with atexit)."""
     with _lock:
         trials = list(_active_trials)
 
@@ -211,6 +220,9 @@ def cleanup():
 
     logger.info("All trial containers cleaned up")
 
+
+# Register cleanup on process exit
+atexit.register(cleanup)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

@@ -6,7 +6,7 @@ import logging
 import sys
 
 from config import Config
-from trending import fetch_trending
+from trending import fetch_trending, fetch_all_trending
 from summarizer import summarize_and_filter, summarize_without_ai
 from renderer import render
 from notifier import send
@@ -55,35 +55,18 @@ def main():
         target = args.target or cfg.notify_target
 
         # 2. Fetch trending for each configured language
-        all_projects = []
         if args.language:
-            # Single language from CLI
             languages = [args.language]
         else:
             languages = cfg.languages
 
-        for lang in languages:
-            logger.info("Fetching trending projects (language=%s, since=%s)", lang, since)
-            try:
-                projects = fetch_trending(
-                    language=lang,
-                    since=since,
-                    spoken_language=cfg.spoken_language,
-                    max_repos=cfg.max_repos,
-                )
-                all_projects.extend(projects)
-                logger.info("Fetched %d projects for %s", len(projects), lang)
-            except Exception as e:
-                logger.warning("Failed to fetch trending for %s: %s", lang, e)
-
-        # Deduplicate by name
-        seen = set()
-        projects = []
-        for p in all_projects:
-            if p["name"] not in seen:
-                seen.add(p["name"])
-                projects.append(p)
-
+        logger.info("Fetching trending projects (languages=%s, since=%s)", languages, since)
+        projects = fetch_all_trending(
+            languages=languages,
+            since=since,
+            spoken_language=cfg.spoken_language,
+            max_repos_per_lang=cfg.max_repos,
+        )
         logger.info("Total unique projects: %d", len(projects))
 
         if not projects:

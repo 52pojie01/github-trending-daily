@@ -37,6 +37,9 @@ class Config:
                 for key, value in data.items():
                     if hasattr(config, key):
                         setattr(config, key, value)
+                    else:
+                        import logging
+                        logging.getLogger(__name__).warning("Unknown config key ignored: %s", key)
 
         # 环境变量覆盖
         if os.getenv('OPENAI_API_KEY'):

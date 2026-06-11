@@ -163,7 +163,7 @@ def summarize_and_filter(
                     "name": repo["name"],
                     "summary": repo.get("description", ""),
                     "reason": "AI 分析不可用",
-                    "score": 3,  # 默认中等分
+                    "score": config.min_score - 1,  # 低于阈值，不会被推荐
                 })
 
     # 将 AI 结果与原始数据合并
